@@ -12,7 +12,7 @@ router = APIRouter(tags=["analytics"])
 
 @router.get("/stats", response_model=StatsOut)
 def get_stats(db: Session = Depends(get_session)):
-    from app.main import run_request_tick
+    from app.core.runtime import run_request_tick
     run_request_tick()
     active = db.query(IncidentDB).filter(IncidentDB.status != "resolved").count()
     total = db.query(IncidentDB).count()

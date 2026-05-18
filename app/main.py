@@ -1,5 +1,4 @@
 import asyncio
-import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,16 +11,13 @@ from app.core.config import settings
 from app.core.database import SessionLocal, engine
 from app.core.logging_setup import setup_logging
 from app.core.middleware import RequestTracingMiddleware
+from app.core.runtime import IS_SERVERLESS
 from app.core.security import limiter
 from app.models.models import create_tables
 from app.routers import admin, agents, analytics, geocoding, incidents
 from app.services import dispatch as dispatch_service
 from app.services import simulation as simulation_service
 from app.websocket.manager import ws_manager
-
-# Vercel serverless has no persistent process — detect and adapt
-IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
-
 
 def _bootstrap_db() -> None:
     create_tables(engine)
@@ -47,19 +43,6 @@ async def _simulation_loop() -> None:
         except Exception:
             logger.exception("Simulation tick failed")
 
-
-def run_request_tick() -> None:
-    """Run a simulation tick on each request when running serverless (no background loop)."""
-    if not IS_SERVERLESS:
-        return
-    try:
-        db = SessionLocal()
-        try:
-            simulation_service.tick(db)
-        finally:
-            db.close()
-    except Exception:
-        logger.warning("Request-tick failed (non-fatal)")
 
 
 @asynccontextmanager
