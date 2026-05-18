@@ -1,0 +1,15 @@
+.venv/
+.venv-new/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+*.db
+*.sqlite3
+.env
+.env.*
+!.env.example
+migrations/
+alembic.ini
+requirements-dev.txt
