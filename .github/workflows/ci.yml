@@ -9,9 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - uses: actions/checkout@v4
@@ -23,15 +20,14 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt -r requirements-dev.txt
+        run: pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Lint with ruff
         run: ruff check app/ tests/
 
       - name: Run tests
         env:
-          DATABASE_URL: sqlite:///:memory:
-          GROQ_API_KEY: test-key
-          API_KEY: test-api-key
+          DATABASE_URL: "sqlite:///:memory:"
+          GROQ_API_KEY: "test-key"
+          API_KEY: "test-api-key"
         run: pytest tests/ -v --tb=short
