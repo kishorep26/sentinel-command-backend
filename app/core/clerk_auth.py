@@ -4,7 +4,6 @@ Verifies tokens using Clerk's JWKS endpoint.
 """
 import time
 from typing import Optional
-from functools import lru_cache
 
 import httpx
 from fastapi import Depends, HTTPException, Header

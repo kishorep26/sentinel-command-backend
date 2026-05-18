@@ -145,7 +145,7 @@ TEMPLATE_SCENARIOS = [
 
 
 def seed_scenarios(db: Session) -> None:
-    existing = db.query(ScenarioDB).filter(ScenarioDB.is_template == True).count()
+    existing = db.query(ScenarioDB).filter(ScenarioDB.is_template.is_(True)).count()
     if existing >= len(TEMPLATE_SCENARIOS):
         return
     for s in TEMPLATE_SCENARIOS:
