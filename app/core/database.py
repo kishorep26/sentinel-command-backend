@@ -15,6 +15,7 @@ if _url.startswith("postgresql"):
         "keepalives_idle": 30,
         "keepalives_interval": 10,
         "keepalives_count": 5,
+        "connect_timeout": 8,  # fail fast on serverless (Vercel limit is 10s)
     }
     _engine_kwargs.update({"pool_size": 5, "max_overflow": 10})
 elif _url.startswith("sqlite"):
