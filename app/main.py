@@ -20,13 +20,17 @@ from app.services import simulation as simulation_service
 from app.websocket.manager import ws_manager
 
 def _bootstrap_db() -> None:
-    create_tables(engine)
-    db = SessionLocal()
     try:
-        dispatch_service.seed_agents(db)
-        dispatch_service.seed_stats(db)
-    finally:
-        db.close()
+        create_tables(engine)
+        db = SessionLocal()
+        try:
+            dispatch_service.seed_agents(db)
+            dispatch_service.seed_stats(db)
+        finally:
+            db.close()
+        logger.info("Database bootstrap complete")
+    except Exception:
+        logger.exception("Database bootstrap failed — will retry on first request")
 
 
 async def _simulation_loop() -> None:
@@ -82,6 +86,16 @@ def create_app() -> FastAPI:
     app.include_router(agents.router)
     app.include_router(analytics.router)
     app.include_router(geocoding.router)
+
+    @app.middleware("http")
+    async def lazy_bootstrap(request, call_next):
+        if not getattr(app.state, "db_ready", False):
+            try:
+                _bootstrap_db()
+                app.state.db_ready = True
+            except Exception:
+                pass
+        return await call_next(request)
 
     return app
 
