@@ -8,10 +8,11 @@ class Settings(BaseSettings):
     database_url: str
     groq_api_key: str = ""
     api_key: str = "sentinel-dev-key"
-    # Stored as str to prevent pydantic-settings from auto-JSON-parsing it.
-    # Accepted formats: JSON array OR comma-separated plain string.
     cors_origins: Any = "http://localhost:3000"
     simulation_tick_seconds: int = 30
+    # Clerk — set CLERK_ISSUER to your Clerk frontend API URL, e.g.:
+    # https://<your-clerk-subdomain>.clerk.accounts.dev
+    clerk_issuer: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

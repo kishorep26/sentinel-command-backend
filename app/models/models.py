@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, JSON
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -62,6 +62,45 @@ class IncidentHistoryDB(Base):
     event_type = Column(String)
     description = Column(String)
     timestamp = Column(DateTime, default=datetime.now, index=True)
+
+
+# ── Training Platform ──────────────────────────────────────────────────────────
+
+class ScenarioDB(Base):
+    __tablename__ = "scenarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
+    difficulty = Column(String, default="intermediate")   # beginner | intermediate | advanced
+    duration_minutes = Column(Integer, default=10)
+    # List of {at_seconds, type, lat, lon, description}
+    events = Column(JSON, default=list)
+    created_by = Column(String, nullable=True)            # Clerk user_id
+    tenant_id = Column(String, nullable=True, index=True) # Clerk org_id or user_id
+    is_template = Column(Boolean, default=False)          # seeded / pre-built
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class TrainingSessionDB(Base):
+    __tablename__ = "training_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scenario_id = Column(Integer, index=True)
+    scenario_name = Column(String)
+    trainee_id = Column(String, index=True)              # Clerk user_id
+    trainee_name = Column(String, nullable=True)
+    status = Column(String, default="active")            # active | completed | abandoned
+    score = Column(Integer, default=0)
+    max_score = Column(Integer, default=0)
+    correct_dispatches = Column(Integer, default=0)
+    total_dispatches = Column(Integer, default=0)
+    avg_response_ms = Column(Integer, default=0)
+    started_at = Column(DateTime, default=datetime.now)
+    completed_at = Column(DateTime, nullable=True)
+    # Detailed per-event breakdown stored as JSON
+    event_results = Column(JSON, default=list)
 
 
 def create_tables(engine) -> None:

@@ -14,7 +14,8 @@ from app.core.middleware import RequestTracingMiddleware
 from app.core.runtime import IS_SERVERLESS
 from app.core.security import limiter
 from app.models.models import create_tables
-from app.routers import admin, agents, analytics, geocoding, incidents
+from app.routers import admin, agents, analytics, geocoding, incidents, training
+from app.routers.training import seed_scenarios
 from app.services import dispatch as dispatch_service
 from app.services import simulation as simulation_service
 from app.websocket.manager import ws_manager
@@ -26,6 +27,7 @@ def _bootstrap_db() -> None:
         try:
             dispatch_service.seed_agents(db)
             dispatch_service.seed_stats(db)
+            seed_scenarios(db)
         finally:
             db.close()
         logger.info("Database bootstrap complete")
@@ -86,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(agents.router)
     app.include_router(analytics.router)
     app.include_router(geocoding.router)
+    app.include_router(training.router)
 
     @app.middleware("http")
     async def lazy_bootstrap(request, call_next):
