@@ -1,37 +1,41 @@
 import json
+from typing import Any
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
 
 
 class Settings(BaseSettings):
     database_url: str
     groq_api_key: str = ""
     api_key: str = "sentinel-dev-key"
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # Stored as str to prevent pydantic-settings from auto-JSON-parsing it.
+    # Accepted formats: JSON array OR comma-separated plain string.
+    cors_origins: Any = "http://localhost:3000"
     simulation_tick_seconds: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    @field_validator("database_url")
-    @classmethod
-    def fix_db_url(cls, v: str) -> str:
-        if v.startswith("postgres://"):
-            v = v.replace("postgres://", "postgresql://", 1)
-        return v
+    @model_validator(mode="after")
+    def parse_and_fix(self) -> "Settings":
+        # Fix postgres:// → postgresql://
+        if isinstance(self.database_url, str) and self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql://", 1)
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors(cls, v):
+        # Parse cors_origins into a proper list
+        v = self.cors_origins
         if isinstance(v, list):
-            return v
-        if isinstance(v, str):
+            pass
+        elif isinstance(v, str):
             v = v.strip()
-            # Accept JSON array: ["a","b"]
             if v.startswith("["):
-                return json.loads(v)
-            # Accept comma-separated: a,b,c
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return v
+                try:
+                    v = json.loads(v)
+                except json.JSONDecodeError:
+                    v = [v]
+            else:
+                v = [o.strip() for o in v.split(",") if o.strip()]
+            self.cors_origins = v
+        return self
 
 
 settings = Settings()
