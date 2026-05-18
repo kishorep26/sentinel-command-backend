@@ -4,7 +4,6 @@ from loguru import logger
 from sqlalchemy.orm import Session
 
 from app.models.models import AgentDB, IncidentDB, IncidentHistoryDB, StatsDB
-from app.schemas.schemas import AgentOut, IncidentOut, IncidentHistoryOut, StatsOut, IncidentLoc
 
 
 class ConnectionManager:

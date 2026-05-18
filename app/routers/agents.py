@@ -1,7 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from loguru import logger
 
 from app.core.database import get_session
 from app.models.models import AgentDB, IncidentDB, IncidentHistoryDB

@@ -18,14 +18,14 @@ _TEST_ENGINE = create_engine(
 _TestSession = sessionmaker(autocommit=False, autoflush=False, bind=_TEST_ENGINE)
 
 # Patch the app's engine and session before importing app modules
-import app.core.database as _db_module
+import app.core.database as _db_module  # noqa: E402
 _db_module.engine = _TEST_ENGINE
 _db_module.SessionLocal = _TestSession
 
-from fastapi.testclient import TestClient
-from app.main import create_app
-from app.core.database import get_session
-from app.models.models import Base
+from fastapi.testclient import TestClient  # noqa: E402
+from app.main import create_app  # noqa: E402
+from app.core.database import get_session  # noqa: E402
+from app.models.models import Base  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

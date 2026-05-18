@@ -1,4 +1,3 @@
-import math
 import pytest
 from app.services.dispatch import haversine, INCIDENT_TYPE_MAP
 

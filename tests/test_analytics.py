@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.models.models import IncidentDB, AgentDB
+from app.models.models import IncidentDB
 
 
 def _seed_incidents(db, n=10):
