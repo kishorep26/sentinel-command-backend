@@ -1,43 +1,6 @@
-import os
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
-from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required")
-
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-if "sslmode" not in DATABASE_URL and "supabase" in DATABASE_URL.lower():
-    separator = "&" if "?" in DATABASE_URL else "?"
-    DATABASE_URL = f"{DATABASE_URL}{separator}sslmode=require"
-
-# Fix for Vercel/Supabase IPv6 issues: force keepalives and appropriate timeouts
-engine = create_engine(
-    DATABASE_URL, 
-    pool_pre_ping=True, 
-    pool_size=5, 
-    max_overflow=10,
-    connect_args={
-        "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5
-    }
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def get_session():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
+from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
@@ -68,13 +31,10 @@ class AgentDB(Base):
     decision = Column(String, nullable=True)
     response_time = Column(Float, default=0.0)
     efficiency = Column(Float, default=90.0)
-    
-    # Advanced Simulation Stats
-    fuel = Column(Float, default=100.0)  # 0-100%
-    stress = Column(Float, default=0.0)  # 0-100%
-    role = Column(String, default="standard") # expert, trainee, leader
-    status_message = Column(String, nullable=True) # "Refuelling", "Patrolling", etc.
-    
+    fuel = Column(Float, default=100.0)
+    stress = Column(Float, default=0.0)
+    role = Column(String, default="standard")
+    status_message = Column(String, nullable=True)
     total_responses = Column(Integer, default=0)
     successful_responses = Column(Integer, default=0)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -104,5 +64,5 @@ class IncidentHistoryDB(Base):
     timestamp = Column(DateTime, default=datetime.now, index=True)
 
 
-def create_tables():
+def create_tables(engine) -> None:
     Base.metadata.create_all(bind=engine)

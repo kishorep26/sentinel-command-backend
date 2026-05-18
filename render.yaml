@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sentinel-command-backend
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false         # set manually in Render dashboard
+      - key: GROQ_API_KEY
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false         # e.g. ["https://your-app.vercel.app"]
+      - key: SIMULATION_TICK_SECONDS
+        value: "30"

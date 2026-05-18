@@ -1,2 +1,44 @@
-/.env
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+.venv/
+.venv-new/
+venv/
+env/
+
+# Test + coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Local dev DB (Alembic testing)
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# macOS
 .DS_Store
+
+# Logs
+*.log
