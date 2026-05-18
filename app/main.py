@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,6 +18,9 @@ from app.routers import admin, agents, analytics, geocoding, incidents
 from app.services import dispatch as dispatch_service
 from app.services import simulation as simulation_service
 from app.websocket.manager import ws_manager
+
+# Vercel serverless has no persistent process — detect and adapt
+IS_SERVERLESS = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
 
 
 def _bootstrap_db() -> None:
@@ -44,12 +48,29 @@ async def _simulation_loop() -> None:
             logger.exception("Simulation tick failed")
 
 
+def run_request_tick() -> None:
+    """Run a simulation tick on each request when running serverless (no background loop)."""
+    if not IS_SERVERLESS:
+        return
+    try:
+        db = SessionLocal()
+        try:
+            simulation_service.tick(db)
+        finally:
+            db.close()
+    except Exception:
+        logger.warning("Request-tick failed (non-fatal)")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
     _bootstrap_db()
-    asyncio.create_task(_simulation_loop())
-    logger.info("Sentinel Command API ready")
+    if IS_SERVERLESS:
+        logger.info("Running in serverless mode — background loop disabled")
+    else:
+        asyncio.create_task(_simulation_loop())
+    logger.info("Sentinel Command API ready (serverless={s})", s=IS_SERVERLESS)
     yield
     logger.info("Sentinel Command API shutting down")
 

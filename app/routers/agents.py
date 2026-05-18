@@ -36,6 +36,8 @@ def _to_out(agent: AgentDB) -> AgentOut:
 
 @router.get("/agents", response_model=list[AgentOut])
 def get_agents(db: Session = Depends(get_session)):
+    from app.main import run_request_tick
+    run_request_tick()
     return [_to_out(a) for a in db.query(AgentDB).all()]
 
 
