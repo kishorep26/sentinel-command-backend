@@ -30,41 +30,52 @@ def get_incidents(db: Session = Depends(get_session)):
     return [_to_out(i) for i in db.query(IncidentDB).all()]
 
 
-@router.post("/incidents", response_model=IncidentOut, dependencies=[Depends(verify_api_key)])
+@router.post("/incidents", response_model=list[IncidentOut], dependencies=[Depends(verify_api_key)])
 def create_incident(incident: IncidentIn, db: Session = Depends(get_session)):
+    """
+    Create one or more incidents from a situation report.
+    Complex emergencies (e.g. fire + casualties + crime) produce multiple incidents,
+    each with an appropriate unit dispatched automatically.
+    """
     if incident.type in ("auto", "unknown", ""):
-        final_type, description = ai_service.ai_classify(incident.description)
+        classified = ai_service.ai_classify_multi(incident.description)
     else:
-        final_type = INCIDENT_TYPE_MAP.get(incident.type.lower(), incident.type)
-        description = incident.description
+        # Manual type override — single incident
+        mapped = INCIDENT_TYPE_MAP.get(incident.type.lower(), incident.type)
+        classified = [{"type": mapped, "severity": 7, "description": incident.description}]
 
+    created: list[IncidentOut] = []
     try:
-        new_incident = IncidentDB(
-            type=final_type,
-            description=description,
-            status="active",
-            lat=incident.location.lat,
-            lon=incident.location.lon,
-            timestamp=datetime.now(),
-            created_at=datetime.now(),
-        )
-        db.add(new_incident)
-        db.flush()
-
-        dispatch_service.assign_agent(new_incident, db)
-
         stats = db.query(StatsDB).first()
-        if stats:
-            stats.total_incidents += 1
-            stats.active_incidents += 1
-            stats.updated_at = datetime.now()
+        for item in classified:
+            new_incident = IncidentDB(
+                type=item["type"],
+                description=item["description"],
+                status="active",
+                lat=incident.location.lat,
+                lon=incident.location.lon,
+                timestamp=datetime.now(),
+                created_at=datetime.now(),
+            )
+            db.add(new_incident)
+            db.flush()
+
+            dispatch_service.assign_agent(new_incident, db)
+
+            if stats:
+                stats.total_incidents += 1
+                stats.active_incidents += 1
 
         db.commit()
-        db.refresh(new_incident)
-        return _to_out(new_incident)
+        for item_db in db.query(IncidentDB).order_by(IncidentDB.id.desc()).limit(len(classified)).all():
+            db.refresh(item_db)
+        created = [_to_out(i) for i in db.query(IncidentDB).order_by(IncidentDB.id.desc()).limit(len(classified)).all()][::-1]
+        logger.info("Created {n} incident(s) from single report", n=len(created))
+        return created
+
     except Exception as exc:
         db.rollback()
-        logger.exception("Error creating incident")
+        logger.exception("Error creating incident(s)")
         raise HTTPException(status_code=500, detail=str(exc))
 
 
