@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     api_key: str = "sentinel-dev-key"
     cors_origins: Any = "http://localhost:3000"
     simulation_tick_seconds: int = 30
+    auto_resolve_hours: int = 2      # stale incidents auto-resolve after this many hours
     # Clerk — set CLERK_ISSUER to your Clerk frontend API URL, e.g.:
     # https://<your-clerk-subdomain>.clerk.accounts.dev
     clerk_issuer: str = ""

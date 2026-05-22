@@ -14,7 +14,8 @@ def tick(db: Session) -> None:
 
 
 def _auto_resolve_stale(db: Session) -> None:
-    cutoff = datetime.fromtimestamp(datetime.now().timestamp() - 6 * 3600)
+    from app.core.config import settings
+    cutoff = datetime.fromtimestamp(datetime.now().timestamp() - settings.auto_resolve_hours * 3600)
     stale = db.query(IncidentDB).filter(
         IncidentDB.status != "resolved",
         IncidentDB.timestamp < cutoff,
